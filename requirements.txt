@@ -1,4 +1,7 @@
-chainlit==2.5.5
+chainlit
 openai
 python-dotenv
-pydantic==2.10.1
+pydantic
+google-generativeai
+anthropic
+asyncio
