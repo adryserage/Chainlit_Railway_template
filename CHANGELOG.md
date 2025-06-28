@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.1.1] - 2025-06-28 - by <https://github.com/adryserage>
+
+### Fixed
+
+- Fixed async streaming issues with different LLM providers:
+  - Corrected async generator handling in OpenAI streaming
+  - Fixed provider-specific stream response formats
+  - Improved error handling for different chunk formats
+- Updated main chat loop to properly handle provider-specific responses
+
 ## [1.1.0] - 2025-06-28 - by <https://github.com/adryserage>
 
 ### Added

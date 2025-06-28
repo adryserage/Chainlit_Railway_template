@@ -1,4 +1,4 @@
-from llm_api import openai_chatbot_chain
+from llm_api import openai_chatbot_chain, ModelProvider, llm_client
 import chainlit as cl
 
 #|--------------------------------------------------------------------------|
@@ -26,9 +26,18 @@ async def main(user_input: cl.Message):
 
     stream = await openai_chatbot_chain(message_history)
 
-    async for part in stream:
-        if token := part.choices[0].delta.content or "":
-            await llm_output.stream_token(token)
+    async for chunk in stream:
+        content = None
+        if llm_client.config.provider == ModelProvider.OPENAI:
+            content = chunk.choices[0].delta.content
+        elif llm_client.config.provider == ModelProvider.ANTHROPIC:
+            if chunk.type == 'content_block_delta':
+                content = chunk.text
+        elif llm_client.config.provider == ModelProvider.GEMINI:
+            content = chunk.text
+            
+        if content:
+            await llm_output.stream_token(content)
 
     message_history.append({"role": "assistant", "content": llm_output.content})
     await llm_output.update()

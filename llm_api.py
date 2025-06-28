@@ -110,7 +110,8 @@ class LLMClient:
                 **self.config.to_dict()
             )
             async for chunk in stream:
-                yield chunk
+                if chunk.choices[0].delta.content is not None:
+                    yield StreamResponse.create(chunk.choices[0].delta.content)
                 
         elif self.config.provider == ModelProvider.ANTHROPIC:
             stream = await self.client.messages.create(
@@ -137,4 +138,24 @@ llm_client = LLMClient()
 # Main entry point for the chatbot
 async def openai_chatbot_chain(messages: List[Dict[str, str]]):
     """Main entry point for chat completion - maintains backward compatibility"""
-    return await llm_client.generate_stream(messages)
+    formatted_messages = llm_client._format_messages(messages)
+    
+    if llm_client.config.provider == ModelProvider.OPENAI:
+        stream = await llm_client.client.chat.completions.create(
+            messages=formatted_messages,
+            stream=True,
+            **llm_client.config.to_dict()
+        )
+    elif llm_client.config.provider == ModelProvider.ANTHROPIC:
+        stream = await llm_client.client.messages.create(
+            messages=formatted_messages,
+            stream=True,
+            **llm_client.config.to_dict()
+        )
+    elif llm_client.config.provider == ModelProvider.GEMINI:
+        chat = llm_client.client.start_chat(history=formatted_messages[:-1])
+        stream = await chat.send_message_async(
+            formatted_messages[-1]['parts'][0],
+            stream=True
+        )
+    return stream
