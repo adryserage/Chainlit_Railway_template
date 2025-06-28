@@ -21,11 +21,16 @@ async def main(user_input: cl.Message):
     message_history = cl.user_session.get("message_history")
     message_history.append({"role": "user", "content": user_input.content})
 
-    llm_output = cl.Message(content="")
+    # Create message with loading state
+    llm_output = cl.Message(content="🤔 Thinking...", author="Assistant")
     await llm_output.send()
-
+    # Get response stream
     stream = await openai_chatbot_chain(message_history)
-
+    
+    # Clear thinking message and start streaming response
+    llm_output.content = ""
+    await llm_output.update()
+    
     async for chunk in stream:
         content = None
         if llm_client.config.provider == ModelProvider.OPENAI:
